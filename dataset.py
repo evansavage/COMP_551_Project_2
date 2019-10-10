@@ -8,6 +8,8 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
+from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
@@ -44,6 +46,23 @@ def clean_dataset(dataset: pd.DataFrame):
         updated_comments.append(final_string)
     return updated_comments
 
+def add_pol_sub(clean_dataset:list):
+    polarity = []
+    subjectivity = []
+
+    for comment in clean_dataset:
+        comment_blob = TextBlob(comment)
+        polarity.append(comment_blob.sentiment.polarity)
+        subjectivity.append(comment_blob.sentiment.subjectivity)
+
+    sPolarity = sp.csr_matrix([x + 1.0 for x in polarity]).transpose() # Naive bayes requires positive numbers
+    sSubjectivity = sp.csr_matrix(subjectivity).transpose()
+
+    dataset = sp.hstack((dataset, sPolarity))
+    dataset = sp.hstack((dataset, sSubjectivity))
+
+    return dataset
+
 def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=False):
 
     if test == False:
@@ -57,21 +76,20 @@ def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=F
     print(type(dataset))
         # X.to_csv('updated_reddit_train.csv', ',')
     # else:
-    #     polarity = []
-        # subjectivity = []
-        # ngrams = [] # Need to convert to numbers!!!
-        # avg_spelling_acc = []
-        # word_counts = []
-        # for comment in updated_comments:
-        #     comment_blob = TextBlob(comment)
-        #     polarity.append(comment_blob.sentiment.polarity)
-        #     subjectivity.append(comment_blob.sentiment.subjectivity)
-        #     # for word in comment_blob.words:
-        #     #     print(word.spellcheck())
-        #     # print(comment_blob.word_counts)
-        #     grams = comment_blob.ngrams(n=6)
-        #     ngrams.append(grams)
-        # dataset.insert(2, 'polarity', polarity)
-        # dataset.insert(2, 'subjectivity', subjectivity)
-        # dataset.insert(2, 'ngrams', ngrams)
+    polarity = []
+    subjectivity = []
+    ngrams = [] # Need to convert to numbers!!!
+    avg_spelling_acc = []
+    word_counts = []
+    for comment in clean_dataset:
+        comment_blob = TextBlob(comment)
+        polarity.append(comment_blob.sentiment.polarity)
+        subjectivity.append(comment_blob.sentiment.subjectivity)
+
+    sPolarity = sp.csr_matrix([x + 1.0 for x in polarity]).transpose() # Naive bayes requires positive numbers
+    sSubjectivity = sp.csr_matrix(subjectivity).transpose()
+
+    dataset = sp.hstack((dataset, sPolarity))
+    dataset = sp.hstack((dataset, sSubjectivity))
+
     return dataset
