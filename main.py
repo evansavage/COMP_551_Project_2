@@ -20,7 +20,7 @@ tuning = input()
 # Load datasets
 
 count_vect = CountVectorizer()
-tfidf_transformer = TfidfTransformer()
+tfidf_transformer = TfidfTransformer(use_idf=True)
 
 original_dataset = load_dataset('reddit_train.csv', ',')
 test_dataset = load_dataset('reddit_test.csv', ',')
@@ -29,12 +29,12 @@ X_orig = original_dataset.loc[:, original_dataset.columns != 'subreddits']
 y = original_dataset['subreddits']
 
 X_orig = clean_dataset(X_orig)
-X_test_pipe = clean_dataset(test_dataset)
+# X_test_pipe = clean_dataset(test_dataset)
 
 # X = dataset_analysis_extension(X_orig, count_vect, tfidf_transformer)
 # X_test = dataset_analysis_extension(X_test_pipe, count_vect, tfidf_transformer, test=True)
 
-print(X.shape, X_test.shape)
+# print(X.shape, X_test.shape)
 
 
 # clf = MultinomialNB().fit(X, y)
@@ -42,43 +42,45 @@ print(X.shape, X_test.shape)
 text_clf = Pipeline([
     ('vect', count_vect),
     ('tfidf', tfidf_transformer),
-    ('clf', svm.SVC(gamma='scale')),
+    ('clf', LogisticRegression()),
 ])
 
 grid_params = {
     'vect__max_df': (0.5, 0.75, 1.0),
-    'vect__max_features': (5000, 10000, 50000),
-    'tfidf__use_idf': (True, False),
-    'tfidf__norm': ('l1', 'l2'),
+    'vect__max_features': (1500, 5000),
+    # 'tfidf__use_idf': (True, False),
+    # 'tfidf__norm': ('l1', 'l2'),
     # 'clf__alpha': np.linspace(0.5, 1.5, 6), # For Naive Bayes
     # 'clf__fit_prior': [True, False], # For Naive Bayes
-    'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
+    # 'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
+    # 'clf__max_iter': (500, 1000, 2000) # For svm.SVC
+    'clf__penalty': ('l1', 'l2'),
+    'clf__C': (0.2, 0.5, 1.0),
 }
+if tuning == "tuning":
+    gsCV = GridSearchCV(text_clf, grid_params, verbose=3)
 
-gsCV = GridSearchCV(text_clf, grid_params)
+    # text_clf.fit(X_orig, y)
 
-# text_clf.fit(X_orig, y)
+    gsCV.fit(X_orig, y)
 
-gsCV.fit(X_orig, y)
+    # predicted = clf.predict(X_test)
+    # predicted_pipeline = text_clf.predict(X_test_pipe)
 
-# predicted = clf.predict(X_test)
-# predicted_pipeline = text_clf.predict(X_test_pipe)
+    # with open('predictions.csv', 'w') as f:
+    #     f.write("id,Category\n")
+    #     for i, item in enumerate(predicted_pipeline):
+    #         f.write(f"{ i },{ item }\n")
 
-# with open('predictions.csv', 'w') as f:
-#     f.write("id,Category\n")
-#     for i, item in enumerate(predicted_pipeline):
-#         f.write(f"{ i },{ item }\n")
+    # print(predicted, predicted_pipeline)
+    print("Best Score: ", gsCV.best_score_)
+    print("Best Params: ", gsCV.best_params_)
 
-
-# print(predicted, predicted_pipeline)
-print("Best Score: ", gsCV.best_score_)
-print("Best Params: ", gsCV.best_params_)
-
-with open('parameters_history.txt', 'a+') as f:
-    f.write("Tuning on: ", datetime.datetime.now(), '\n')
-    f.write(str(grid_params) + '\n')
-    f.write("Best Score: ", gsCV.best_score_, '\n')
-    f.write("Best Params: ", gsCV.best_params_, '\n\n\n')
+    with open('parameters_history.txt', 'a+') as f:
+        f.write("Tuning on: ", datetime.datetime.now(), '\n')
+        f.write(str(grid_params) + '\n')
+        f.write("Best Score: ", gsCV.best_score_, '\n')
+        f.write("Best Params: ", gsCV.best_params_, '\n\n\n')
 # X_test = pd.DataFrame(dataset_analysis_extension(test_dataset, True))
 
 # clf = LogisticRegression(random_state=0, solver='lbfgs', multi_class='multinomial').fit(X, y)
