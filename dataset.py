@@ -6,11 +6,15 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import string
 from textblob import TextBlob, Word
+
+
 
 def load_dataset(file_name:str, delimiter:str):
     """load dataset from csv file into a pd dataframe"""
@@ -18,7 +22,7 @@ def load_dataset(file_name:str, delimiter:str):
 
     return dataset
 
-def dataset_analysis_extension(dataset: pd.DataFrame, save=False):
+def clean_dataset(dataset: pd.DataFrame):
     comments = dataset['comments']
     updated_comments = []
     translator = str.maketrans('', '', string.punctuation)
@@ -38,16 +42,22 @@ def dataset_analysis_extension(dataset: pd.DataFrame, save=False):
         for word in comment_blob:
             final_string += lemmatizer.lemmatize(word) + ' '
         updated_comments.append(final_string)
-    if save:
-        # outputs = dataset['subreddits']
-        # del dataset['subreddits']
-        # dataset['comments'] = pd.DataFrame(updated_comments)
-        # print(dataset)
-        tfidfconverter = TfidfVectorizer(max_features=1500, min_df=5, max_df=0.7, stop_words=stopwords.words('english'))
-        dataset = tfidfconverter.fit_transform(updated_comments).toarray()
-        # X.to_csv('updated_reddit_train.csv', ',')
+    return updated_comments
+
+def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=False):
+
+    if test == False:
+        dataset_counts = countVec.fit_transform(clean_dataset)
+        dataset = transformer.fit_transform(dataset_counts)
     else:
-        polarity = []
+        dataset_counts = countVec.transform(clean_dataset)
+        dataset = transformer.transform(dataset_counts)
+
+
+    print(type(dataset))
+        # X.to_csv('updated_reddit_train.csv', ',')
+    # else:
+    #     polarity = []
         # subjectivity = []
         # ngrams = [] # Need to convert to numbers!!!
         # avg_spelling_acc = []
