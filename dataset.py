@@ -5,6 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+from nltk import word_tokenize, pos_tag, ne_chunk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
@@ -15,8 +16,10 @@ import seaborn as sns
 import re
 import string
 from textblob import TextBlob, Word
+from sklearn.preprocessing import FunctionTransformer
 
-
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
 
 def load_dataset(file_name:str, delimiter:str):
     """load dataset from csv file into a pd dataframe"""
@@ -63,6 +66,9 @@ def add_pol_sub(clean_dataset:list):
 
     return dataset
 
+def named_entry_recognition(input_str:str):
+    return ne_chunk(pos_tag(word_tokenize(input_str)))
+
 def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=False):
 
     if test == False:
@@ -93,3 +99,21 @@ def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=F
     dataset = sp.hstack((dataset, sSubjectivity))
 
     return dataset
+
+def get_polarity(text):
+    return TextBlob(text).sentiment.polarity
+
+def get_subjectivity(text):
+    return TextBlob(text).sentiment.subjectivity
+
+def reshape_a_feature_column(series):
+    return np.reshape(np.asarray(series), (len(series), 1))
+
+def pipelinize_feature(function, active=True):
+    def list_comprehend_a_function(list_or_series, active=True):
+        if active:
+            processed = [function(i) for i in list_or_series]
+            processed = reshape_a_feature_column(processed)
+        else: # if it's not active, just pass it right back
+            return list_or_series
+    return FunctionTransformer(list_comprehend_a_function, validate=False, kw_args={'active':active})
