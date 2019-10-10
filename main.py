@@ -40,33 +40,34 @@ text_clf = Pipeline([
     ('mnb', MultinomialNB()),
 ])
 
+#SEEMS TO BE TAKING THE FIRST OPTION EVERY TIME EVEN IF NOT BEST??
 grid_params = {
-  'mnb__alpha': np.linspace(0.5, 1.5, 6), #MultinomialNB param tuning
-  'mnb__fit_prior': [True, False]
+  'mnb__alpha': (0.01, 1, 0.5, 0.2, 0.1, 0.4), #MultinomialNB param tuning
+  'mnb__fit_prior': (False, True)
 #   'tfidf__tfidf_transformer__max_df': np.linspace(0.1, 1, 10), # tfidf param tunings
 #   'tfidf__tfidf_transformer__binary': [True, False],
 #   'tfidf__tfidf_transformer__norm': [None, 'l1', 'l2']
 }
 
 clf = GridSearchCV(text_clf, grid_params)
-best_model = clf.fit(X_orig, y); # why X_orig
+best_model = clf.fit(X_orig, y)
 
 print("Best Score: ", clf.best_score_)
 print("Best Params: ", clf.best_params_)
 
-preds = clf.predict(X_test_pipe)
+predicted_pipeline = best_model.predict(X_test_pipe)
 
-print(preds)
+print(predicted_pipeline)
 
 # text_clf.fit(X_orig, y)
 
 # predicted = clf.predict(X_test)
 # predicted_pipeline = text_clf.predict(X_test_pipe)
 
-# with open('predictions.csv', 'w') as f:
-#     f.write("id,Category\n")
-#     for i, item in enumerate(predicted_pipeline):
-#         f.write(f"{ i },{ item }\n")
+with open('predictions.csv', 'w') as f:
+    f.write("id,Category\n")
+    for i, item in enumerate(predicted_pipeline):
+        f.write(f"{ i },{ item }\n")
 
 # print(predicted, predicted_pipeline)
 
