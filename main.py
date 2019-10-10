@@ -11,9 +11,12 @@ from sklearn.pipeline import Pipeline
 from sklearn import svm
 import numpy as np
 import pandas as pd
+import datetime
 
 from dataset import load_dataset, dataset_analysis_extension, clean_dataset, add_pol_sub
 
+print('Is this run for tuning or for predicting?')
+tuning = input()
 # Load datasets
 
 count_vect = CountVectorizer()
@@ -27,8 +30,6 @@ y = original_dataset['subreddits']
 
 X_orig = clean_dataset(X_orig)
 X_test_pipe = clean_dataset(test_dataset)
-
-X_orig = add_pol_sub(X_orig)
 
 # X = dataset_analysis_extension(X_orig, count_vect, tfidf_transformer)
 # X_test = dataset_analysis_extension(X_test_pipe, count_vect, tfidf_transformer, test=True)
@@ -51,7 +52,7 @@ grid_params = {
     'tfidf__norm': ('l1', 'l2'),
     # 'clf__alpha': np.linspace(0.5, 1.5, 6), # For Naive Bayes
     # 'clf__fit_prior': [True, False], # For Naive Bayes
-    'clf__decision_function_shape': ('ovo', 'ovr'),
+    'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
 }
 
 gsCV = GridSearchCV(text_clf, grid_params)
@@ -73,6 +74,11 @@ gsCV.fit(X_orig, y)
 print("Best Score: ", gsCV.best_score_)
 print("Best Params: ", gsCV.best_params_)
 
+with open('parameters_history.txt', 'a+') as f:
+    f.write("Tuning on: ", datetime.datetime.now(), '\n')
+    f.write(str(grid_params) + '\n')
+    f.write("Best Score: ", gsCV.best_score_, '\n')
+    f.write("Best Params: ", gsCV.best_params_, '\n\n\n')
 # X_test = pd.DataFrame(dataset_analysis_extension(test_dataset, True))
 
 # clf = LogisticRegression(random_state=0, solver='lbfgs', multi_class='multinomial').fit(X, y)
