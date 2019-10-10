@@ -31,9 +31,6 @@ X_test = dataset_analysis_extension(X_test_pipe, count_vect, tfidf_transformer, 
 
 print(X.shape, X_test.shape)
 
-le = preprocessing.LabelEncoder()
-le.fit_transform(y)
-# print(le[0])
 
 clf = MultinomialNB().fit(X, y)
 
