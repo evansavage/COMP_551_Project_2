@@ -16,6 +16,15 @@ import seaborn as sns
 import re
 import string
 from textblob import TextBlob, Word
+
+import spacy
+from spacy import displacy
+from collections import Counter
+# import en_core_web_sm
+
+# Downlad: python3 -m spacy download en_core_web_sm
+
+nlp = spacy.load("en_core_web_sm")
 from sklearn.preprocessing import FunctionTransformer
 
 nltk.download('maxent_ne_chunker')
@@ -32,7 +41,12 @@ def clean_dataset(dataset: pd.DataFrame):
     updated_comments = []
     translator = str.maketrans('', '', string.punctuation)
     stop_words = set(stopwords.words('english'))
-    lemmatizer = WordNetLemmatizer()
+    # lemmatizer = WordNetLemmatizer()
+    # unique_tags = []
+    tag_dict = {"J": 'a',
+                "N": 'n',
+                "V": 'v',
+                "R": 'r'}
     for comment in comments:
         comment = re.sub(r'\d+', '', comment)
         comment = re.sub(r'\s+[a-zA-Z]\s+', ' ', comment)
@@ -42,11 +56,18 @@ def clean_dataset(dataset: pd.DataFrame):
         comment = comment.translate(translator)
         comment = comment.strip()
         comment_blob = TextBlob(comment)
-        comment_blob = [i for i in comment_blob.words if not i in stop_words]
-        final_string =''
-        for word in comment_blob:
-            final_string += lemmatizer.lemmatize(word) + ' '
-        updated_comments.append(final_string)
+        # tags = comment_blob.pos_tags
+        # comment_blob = [i for i in comment_blob.words if not i in stop_words]
+        # updated = TextBlob(' '.join(comment_blob))
+        words_and_tags = [(w, tag_dict.get(pos[0], 'n')) for w, pos in comment_blob.tags]
+        lemmatized_list = [wd.lemmatize(tag) for wd, tag in words_and_tags]
+        # for i,word in enumerate(comment_blob):
+        #     # print(tags[i][1])
+        #     final_string += word.lemmatize() + ' '
+        # # print(final_string)
+        updated_comments.append(' '.join(lemmatized_list))
+
+    # print(unique_tags)
     return updated_comments
 
 def add_pol_sub(clean_dataset:list):
@@ -67,7 +88,9 @@ def add_pol_sub(clean_dataset:list):
     return dataset
 
 def named_entry_recognition(input_str:str):
-    return ne_chunk(pos_tag(word_tokenize(input_str)))
+    out = nlp(input_str)
+    print([(X.text, X.label_) for X in out.ents])
+    # return ne_chunk(pos_tag(word_tokenize(input_str)))
 
 def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=False):
 
