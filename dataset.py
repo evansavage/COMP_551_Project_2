@@ -67,7 +67,7 @@ def clean_dataset(dataset: pd.DataFrame):
         # # print(final_string)
         updated_comments.append(' '.join(lemmatized_list))
 
-    # print(unique_tags)
+    print(type(updated_comments))
     return updated_comments
 
 def add_pol_sub(clean_dataset:list):
@@ -124,19 +124,52 @@ def dataset_analysis_extension(clean_dataset:list, countVec, transformer, test=F
     return dataset
 
 def get_polarity(text):
-    return TextBlob(text).sentiment.polarity
+    return TextBlob(text).sentiment.polarity + 1.0
 
 def get_subjectivity(text):
     return TextBlob(text).sentiment.subjectivity
 
+def get_comment_length(text):
+    return len(text)
+
 def reshape_a_feature_column(series):
     return np.reshape(np.asarray(series), (len(series), 1))
 
-def pipelinize_feature(function, active=True):
+
+def named_entity_recognition(clean_dataset:list):
+    columns = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'EVENT',
+        'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME', 'PERCENT', 'MONEY',
+        'QUANTITY', 'ORDINAL', 'CARDINAL']
+    ne_dataset = pd.DataFrame(0, index=np.arange(len(clean_dataset)),
+        columns=columns)
+    for i, entry in enumerate(clean_dataset):
+        out = nlp(entry)
+        if out.ents:
+            for X in out.ents:
+                ne_dataset.at[i, X.label_] += 1
+        # print(ne_dataset.loc[[i]])
+    print(ne_dataset)
+    return ne_dataset
+
+def ner_input(train, test, active=True):
     def list_comprehend_a_function(list_or_series, active=True):
         if active:
-            processed = [function(i) for i in list_or_series]
-            processed = reshape_a_feature_column(processed)
+            if(len(train) > 30000):
+                processed = train
+            else:
+                processed = test
+        else:
+            return list_or_series
+    return FunctionTransformer(list_comprehend_a_function, validate=False, kw_args={'active':active})
+
+def pipelinize_feature(function, active=True, matrix=False):
+    def list_comprehend_a_function(list_or_series, active=True):
+        if active:
+            if not matrix:
+                processed = [function(i) for i in list_or_series]
+                processed = reshape_a_feature_column(processed)
+            else:
+                processed = function(list_or_series).to_numpy()
         else: # if it's not active, just pass it right back
             return list_or_series
     return FunctionTransformer(list_comprehend_a_function, validate=False, kw_args={'active':active})
