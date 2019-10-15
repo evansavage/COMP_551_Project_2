@@ -47,12 +47,23 @@ def clean_dataset(dataset: pd.DataFrame):
                 "N": 'n',
                 "V": 'v',
                 "R": 'r'}
-    for comment in comments:
+    for i, comment in enumerate(comments):
+        # Remove urls
+        comment = re.sub(r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})', '', comment)
+        # Remove usernames
+        comment = re.sub(r'/?u/[A-Za-z0-9_-]+', '', comment)
+        # Remove subreddit prefix
+        comment = re.sub('/?r/', '', comment)
+        # Remove numbers
         comment = re.sub(r'\d+', '', comment)
+        # remove single characters
         comment = re.sub(r'\s+[a-zA-Z]\s+', ' ', comment)
+        # remove single characters from the start
         comment = re.sub(r'\^[a-zA-Z]\s+', ' ', comment)
+        # replace multiple space with single space
         comment = re.sub(r'\s+', ' ', comment, flags=re.I)
         comment = comment.lower()
+        # Remove punctuation
         comment = comment.translate(translator)
         comment = comment.strip()
         comment_blob = TextBlob(comment)
@@ -65,9 +76,10 @@ def clean_dataset(dataset: pd.DataFrame):
         #     # print(tags[i][1])
         #     final_string += word.lemmatize() + ' '
         # # print(final_string)
+        # print(i, comment)
         updated_comments.append(' '.join(lemmatized_list))
 
-    print(type(updated_comments))
+    print('Done cleaning')
     return updated_comments
 
 def add_pol_sub(clean_dataset:list):
