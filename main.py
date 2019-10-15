@@ -10,7 +10,7 @@ from sklearn.feature_selection import RFE
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn import svm
 import numpy as np
 import pandas as pd
@@ -29,6 +29,7 @@ tuning = input()
 
 count_vect = CountVectorizer(stop_words="english")
 tfidf_transformer = TfidfTransformer(use_idf=True, norm='l2')
+tfidf_vec = TfidfVectorizer(stop_words="english")
 
 original_dataset = load_dataset('reddit_train.csv', ',')
 test_dataset = load_dataset('reddit_test.csv', ',')
@@ -73,10 +74,13 @@ rfe = RFE(MultinomialNB())
 
 text_clf = Pipeline([
     ('features', FeatureUnion([
+        # ('reg', Pipeline([
+        #     ('vect', count_vect),
+        #     ('tfidf', tfidf_transformer),
+        # ])),
         ('reg', Pipeline([
-            ('vect', count_vect),
-            ('tfidf', tfidf_transformer),
-        ])),
+            ('tfvec', tfidf_vec)
+        ]))
         # ('topics', Pipeline([
         #     ('vect', count_vect),
         #     ('top', lda),
@@ -87,27 +91,32 @@ text_clf = Pipeline([
         # ('subjectivity', pipelinize_feature(get_subjectivity, active=True)),
     ])),
     # ('rfe', rfe),
-    ('clf', MultinomialNB()),
+    ('clf', svm.LinearSVC(fit_intercept=True)),
 ])
 
 grid_params = {
-    'features__reg__vect__max_df': (0.1,0.9, 1),
-    # 'features__reg__vect__min_df': (20,10),
-    'features__reg__vect__ngram_range': ((1,2),(1,3)),
-    # 'features__reg__vect__max_features': (40000, 100000),
+    # 'features__reg__vect__max_df': (0.1,0.9, 1),
+    # 'features__reg__tfvec__min_df': (2,3),
+    # 'features__reg__vect__ngram_range': ((1,2),(1,3)),
+    'features__reg__tfvec__max_df': (0.1, 0.9, 1),
+    'features__reg__tfvec__ngram_range': ((1,2),(1,3)),
+    # 'features__reg__tfvec__sublinear_tf': (True, False),
+    # 'features__reg__tfvec__norm': ('l1', 'l2'),
+    # 'features__reg__tfvec__max_features': (800000, 1200000),
     # 'features__topics__vect__max_features': (1500, 3000),
     # 'features__topics__vect__max_df': (0.8, 0.9, 1),
     # 'features__topics__vect__min_df': (5,10,12),
     # 'features__topics__vect__ngram_range': ((1,2),(1,3)),
     # 'features__reg__tfidf__use_idf': (True, False),
     # 'features__reg__tfidf__norm': ('l1', 'l2'),
-    'clf__alpha': np.linspace(1, 1.5, 6), # For Naive Bayes
-    'clf__fit_prior': [True, False], # For Naive Bayes
+    # 'clf__alpha': np.linspace(1, 1.5, 6), # For Naive Bayes
+    # 'clf__fit_prior': [True, False], # For Naive Bayes
     # 'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
-    # 'clf__max_iter': (2000, 3000),
+    'clf__max_iter': (1100, 5000),
+    'clf__intercept_scaling': (1.5, 1.8),
     # 'clf__multi_class': ('ovr', 'crammer_singer'),
     # 'clf__penalty': ('l1', 'l2'),
-    # 'clf__C': (0.8, 1.0),
+    # 'clf__C': (1.3, 0.9),
     # 'clf__solver': ('newton-cg', 'lbfgs'),
     # 'clf__n_estimators': (10, 100),
     # 'clf__random_state': (0,1),
@@ -126,11 +135,13 @@ if tuning == "t":
     # predicted_pipeline = text_clf.predict(X_test_pipe)
 elif tuning == 'p':
     text_clf.set_params(
-        features__reg__vect__max_df=0.1,
+        features__reg__tfvec__max_df=0.1,
         # features__reg__vect__min_df=5,
-        features__reg__vect__ngram_range=(1, 2),
-        clf__alpha=1.0,
-        clf__fit_prior=True,
+        features__reg__tfvec__ngram_range=(1, 2),
+        clf__max_iter=1100,
+        clf__intercept_scaling=1.5,
+        # clf__alpha=1.0,
+        # clf__fit_prior=True,
     )
     text_clf.fit(X_orig, y)
     predicted = text_clf.predict(X_test_pipe)
