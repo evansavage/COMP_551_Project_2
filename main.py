@@ -6,9 +6,11 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_selection import RFE
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 import numpy as np
 import pandas as pd
@@ -18,6 +20,7 @@ import csv
 from dataset import load_dataset, dataset_analysis_extension, clean_dataset, \
     add_pol_sub, pipelinize_feature, named_entity_recognition, get_polarity, \
     get_subjectivity, ner_input, get_comment_length
+
 print('Use existing clean dataset? [y/n]')
 clean = input()
 print('Is this run for tuning or for predicting? [t/p]')
@@ -65,7 +68,7 @@ ner_test = ner_test / ner_test.max(axis=0)
 print(ner)
 
 lda = LatentDirichletAllocation(n_components=20, random_state=0)
-
+rfe = RFE(MultinomialNB())
 # lda.fit_transform(np.array(X_orig).reshape(-1,1), y)
 
 text_clf = Pipeline([
@@ -74,38 +77,41 @@ text_clf = Pipeline([
             ('vect', count_vect),
             ('tfidf', tfidf_transformer),
         ])),
-        ('topics', Pipeline([
-            ('vect', count_vect),
-            ('top', lda),
-        ])),
-        ('ner', ner_input(ner, ner_test, active=True)),
-        ('len', pipelinize_feature(get_comment_length, active=True)),
-
+        # ('topics', Pipeline([
+        #     ('vect', count_vect),
+        #     ('top', lda),
+        # ])),
+        # ('ner', ner_input(ner, ner_test, active=True)),
+        # ('len', pipelinize_feature(get_comment_length, active=True)),
         # ('polarity', pipelinize_feature(get_polarity, active=True)),
         # ('subjectivity', pipelinize_feature(get_subjectivity, active=True)),
     ])),
+    # ('rfe', rfe),
     ('clf', MultinomialNB()),
 ])
 
 grid_params = {
-    'features__reg__vect__max_df': (0.8, 0.9, 1),
-    'features__reg__vect__min_df': (5,10,12),
-    # 'features__reg__vect__ngram_range': ((1,2),(1,3),(1,4),(1,5),(1,6)),
-    # 'features__reg__vect__max_features': (10, 20),
-    # 'features__topics__vect__max_features': (20000, 40000),
+    'features__reg__vect__max_df': (0.1,0.9, 1),
+    # 'features__reg__vect__min_df': (20,10),
+    'features__reg__vect__ngram_range': ((1,2),(1,3)),
+    # 'features__reg__vect__max_features': (40000, 100000),
+    # 'features__topics__vect__max_features': (1500, 3000),
     # 'features__topics__vect__max_df': (0.8, 0.9, 1),
     # 'features__topics__vect__min_df': (5,10,12),
-    'features__topics__vect__ngram_range': ((1,2),(1,3),(1,4),(1,5),(1,6)),
+    # 'features__topics__vect__ngram_range': ((1,2),(1,3)),
     # 'features__reg__tfidf__use_idf': (True, False),
     # 'features__reg__tfidf__norm': ('l1', 'l2'),
-    'clf__alpha': np.linspace(0.5, 1.5, 6), # For Naive Bayes
+    'clf__alpha': np.linspace(1, 1.5, 6), # For Naive Bayes
     'clf__fit_prior': [True, False], # For Naive Bayes
     # 'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
     # 'clf__max_iter': (2000, 3000),
     # 'clf__multi_class': ('ovr', 'crammer_singer'),
     # 'clf__penalty': ('l1', 'l2'),
     # 'clf__C': (0.8, 1.0),
-    # 'clf__solver': ('newton-cg', 'lbfgs')
+    # 'clf__solver': ('newton-cg', 'lbfgs'),
+    # 'clf__n_estimators': (10, 100),
+    # 'clf__random_state': (0,1),
+    # 'clf__max_features': ('auto', 30, 60),
 }
 
 if tuning == "t":
@@ -120,10 +126,10 @@ if tuning == "t":
     # predicted_pipeline = text_clf.predict(X_test_pipe)
 elif tuning == 'p':
     text_clf.set_params(
-        features__reg__vect__max_df=0.8,
-        features__reg__vect__min_df=5,
-        features__topics__vect__ngram_range=(1, 2),
-        clf__alpha=0.5,
+        features__reg__vect__max_df=0.1,
+        # features__reg__vect__min_df=5,
+        features__reg__vect__ngram_range=(1, 2),
+        clf__alpha=1.0,
         clf__fit_prior=True,
     )
     text_clf.fit(X_orig, y)
