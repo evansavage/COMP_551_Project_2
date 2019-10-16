@@ -28,17 +28,24 @@ print("splitting x and y")
 X_orig = original_dataset.loc[:, original_dataset.columns != 'subreddits']
 y = original_dataset['subreddits']
 print("clean data")
-X_orig = clean_dataset(X_orig)
+# X_orig = clean_dataset(X_orig)
+with open('clean_train.csv') as f:
+    X_orig = [line.strip() for line in f][1:]
+with open('clean_test.csv') as f:
+    X_test_pipe = [line.strip() for line in f][1:]
+ner = load_dataset('ner_clean_train.csv', ',').to_numpy()[:,1:]
+ner_test = load_dataset('ner_clean_test.csv', ',').to_numpy()[:,1:]
 print("start vectorizer")
 X_nb = count_vect_nb.fit_transform(X_orig)
 
 print("start split")
-X_train, X_test, y_train, y_test = train_test_split(X_nb, y, test_size=0.33, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_nb, y, test_size=0.01, random_state=42)
 nb = NaiveBayes()
 print("train naivebayes")
 nb.train(X_train, y_train)
 print("predict naivebayes")
 result = nb.predict(X_test)
+print(len(result))
 print("accuracy")
 accuracy = nb.validation(result, y_test)
 print(accuracy)

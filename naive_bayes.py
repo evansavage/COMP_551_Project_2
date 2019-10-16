@@ -51,15 +51,44 @@ class NaiveBayes:
 
     def predict(self, X):
         prediction = []
-        for i in range(len(X)):
+        # print(self.theta_jk)
+        # print(self.theta_k)
+        print(self.theta_jk.shape)
+        ones = np.ones((1, X.shape[1]))
+        print(ones.shape)
+        ones_csr = csr_matrix(ones)
+        log_0 = np.log(self.theta_jk)
+        log_1 = np.log(ones - self.theta_jk)
+        log_k = np.log(self.theta_k)
+        # hold = csr_matrix(np.invert(X))
+        print(log_k)
+        print(log_0[0].shape)
+        for i in range(X.shape[0]):
             class_prob = []
-            for k in range(len(self.classes)):
+            # print(ones - X[i])
+            # feature_likelihood = log_k + X[i]
+            for k in range(len(self.encoder.classes_)):
                 feature_likelihood = 0
-                for j in range(num_features):
-                    feature_likelihood += x[j]*np.log(theta_jk[k][j]+(1-x[j])*np.log(1-theta_jk[k][j]))
-                cb = feature_likelihood+np.log(theta_k[k])
-                class_prob.append(cb)
+                # print(ones - self.theta_jk[k])
+                # feature_likelihood += X[i]*np.log(self.theta_jk[k]) + (ones - X[i]) * np.log(ones - self.theta_jk[k]).T
+                # print(X[i].shape, log_0[k].shape, log_1[k].shape)
+
+                ##### WORKING BUT SLOW
+                hold = ones_csr - X.getrow(i)
+                feature_likelihood = X.getrow(i).multiply(log_0[k]) + hold.multiply(log_1[k])
+                
+                # feature_likelihood = X[i].multiply(log_0[k])
+                # for j in range(self.num_features):
+                    # print(k, j, X[k,j])
+                    # feature_likelihood += X[i,j]*np.log(self.theta_jk[k,j])+(1-X[i,j])*np.log(1-self.theta_jk[k,j])
+                # cb = feature_likelihood+np.log(self.theta_k[k])
+                # feature_likelihood.data += log_k[k]
+                # print(feature_likelihood.shape)
+                # cb = feature_likelihood+log_k[k]
+                # print(cb.shape)
+                class_prob.append(feature_likelihood.sum() + log_k[k])
             prediction.append(np.argmax(class_prob))
+            print('example done')
         return prediction
 
     def validation(self, prediction, y):
