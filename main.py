@@ -91,20 +91,20 @@ text_clf = Pipeline([
         # ('subjectivity', pipelinize_feature(get_subjectivity, active=True)),
     ])),
     # ('rfe', rfe),
-    ('clf', svm.LinearSVC()),
+    ('clf', svm.LinearSVC(C=0.2, dual=False)),
 ])
 
 grid_params = {
     # 'features__reg__vect__max_df': (0.1,0.9, 1),
-    # 'features__reg__tfvec__min_df': (2,3),
+    #b'features__reg__tfvec__min_df': (2,3),
     # 'features__reg__vect__ngram_range': ((1,2),(1,3)),
-    'features__reg__tfvec__max_df': (0.8, 0.9, 1),
+    # 'features__reg__tfvec__max_df': (0.8, 0.9, 1),
     # 'features__reg__tfvec__ngram_range': ((1,2),(1,3)),
     #'features__reg__tfvec__sublinear_tf': (True, False),
-    #'features__reg__tfvec__norm': ('l1', 'l2'),
+    # 'features__reg__tfvec__norm': ('l1', 'l2'),
     # 'features__reg__tfvec__max_features': (800000, 1200000),
     # 'features__reg__tfvec__use_idf': (True, False),
-    #'features__reg__tfvec__smooth_idf': (True, False)
+    #'features__reg__tfvec__smooth_idf': (True, False),
     # 'features__topics__vect__max_features': (1500, 3000),
     # 'features__topics__vect__max_df': (0.8, 0.9, 1),
     # 'features__topics__vect__min_df': (5,10,12),
@@ -115,11 +115,12 @@ grid_params = {
     # 'clf__fit_prior': [True, False], # For Naive Bayes
     # 'clf__decision_function_shape': ('ovo', 'ovr'), # For svm.SVC
     # 'clf__max_iter': (1100, 5000),
+    # 'clf__fit_intercept': (True, False),
     # 'clf__intercept_scaling': (1.5, 1.8),
     # 'clf__multi_class': ('ovr', 'crammer_singer'),
     # 'clf__penalty': ('l1', 'l2'),
-    'clf__C': (0.2, 0.9),
-    'clf__dual': (False, True)
+    #'clf__C': (0.2, 0.9),
+    #'clf__dual': (False, True)
     # 'clf__solver': ('newton-cg', 'lbfgs'),
     # 'clf__n_estimators': (10, 100),
     # 'clf__random_state': (0,1),
@@ -140,6 +141,7 @@ if tuning == "t":
 elif tuning == 'p':
     text_clf.set_params(
         features__reg__tfvec__max_df=0.8,
+        features__reg__tfvec__sublinear_tf=True,
         # features__reg__vect__min_df=5,
         #features__reg__tfvec__ngram_range=(1, 2),
         #clf__max_iter=1100,
@@ -152,7 +154,7 @@ elif tuning == 'p':
     )
     text_clf.fit(X_orig, y)
     predicted = text_clf.predict(X_test_pipe)
-    with open('predictions.csv', 'w') as f:
+    with open('predsz.csv', 'w') as f:
         f.write("id,Category\n")
         for i, item in enumerate(predicted):
             f.write(f"{ i },{ item }\n")
