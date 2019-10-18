@@ -37,10 +37,8 @@ class NaiveBayes:
         prediction = []
         for i in range(len(X)):
             class_prob = []
-            for k in range(len(self.classes)):
-                
-                feature_likelihood = np.dot(X[i],np.log(self.theta_jk[k])) + np.dot((1-X[i]), np.log(1-self.theta_jk[k]))
-               
+            for k in range(len(self.classes)):                
+                feature_likelihood = np.dot(X[i],np.log(self.theta_jk[k])) + np.dot((1-X[i]), np.log(1-self.theta_jk[k]))              
                 cb = feature_likelihood+np.log(self.theta_k[k])
                 class_prob.append(cb)
             prediction.append(np.argmax(class_prob))
