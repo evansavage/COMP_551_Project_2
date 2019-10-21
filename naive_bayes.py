@@ -16,7 +16,6 @@ class NaiveBayes:
         self.num_features = X.getrow(0).shape[1]
         self.theta_k = [] #marginal probability for each class
         self.theta_jk = np.empty((len(self.encoder.classes_), X.shape[1])) #confitional probability of each feature given each class [each class[each features]]
-        print(self.theta_jk.shape)
         y = np.array(y)
 
         num_examples = len(y)
@@ -32,8 +31,6 @@ class NaiveBayes:
    
     def predict(self, X, y=None):
         X = X.toarray()
-        print("predict start")
-        print(len(X[0]), self.num_features, len(self.theta_jk[0]))
         prediction = []
         for i in range(len(X)):
             class_prob = []
@@ -48,13 +45,3 @@ class NaiveBayes:
         prediction = self.predict(X)
         correct = sum(np.equal(self.classes[prediction], y))
         return correct / len(prediction)
-
-    # def validation(self, prediction, y):
-    #     # print("lenth of prediction ", self.classes[prediction])
-    #     # print("lenth of y ", y)
-    #     correct = sum(np.equal(self.classes[prediction], y))
-    # #    c = np.logical_and(prediction == y)
-    #     # for i in range(len(prediction)):
-    #     #     correct += 1 if y[prediction[i]] == y[i] else 0
-    #     accuracy = correct / len(prediction)
-    #     return accuracy
