@@ -31,14 +31,13 @@ tfidf_vec = TfidfVectorizer()
 
 original_dataset = load_dataset('reddit_train.csv', ',')
 test_dataset = load_dataset('reddit_test.csv', ',')
-new_orig_dataset = load_dataset('reddit_train_updated.csv', ',').dropna()
-print(new_orig_dataset)
+# new_orig_dataset = load_dataset('reddit_train_updated.csv', ',').dropna()
 
 X = original_dataset.loc[:, original_dataset.columns != 'subreddits']
 y = original_dataset['subreddits']
 
-X_new = new_orig_dataset.comments.values
-y_new = new_orig_dataset.subreddits.values
+# X_new = new_orig_dataset.comments.values
+# y_new = new_orig_dataset.subreddits.values
 
 if clean == 'c':
     X_orig = clean_dataset(X)
@@ -71,28 +70,23 @@ elif clean == 'u':
     # Use unclean dataset dataset with new comments
     X_orig = X.comments.values
     # y = y_new
-    X_test_pipe = test_dataset.values
+    X_test_pipe = test_dataset.comments.values
     ner = load_dataset('ner_clean_train.csv', ',').to_numpy()[:,1:]
     ner_test = load_dataset('ner_clean_test.csv', ',').to_numpy()[:,1:]
 ner = ner / ner.max(axis=0)
 ner_test = ner_test / ner_test.max(axis=0)
-print(type(ner), type(ner_test))
 
 text_clf = Pipeline([
     ('features', FeatureUnion([
         ('reg', Pipeline([
             ('tfvec', tfidf_vec)
         ])),
-        # ('topics', Pipeline([
-        #     ('vect', count_vect),
-        #     ('top', lda),
-        # ])),
         # ('ner', ner_input(ner, ner_test, active=True)),
         # ('len', pipelinize_feature(get_comment_length, active=True)),
         # ('polarity', pipelinize_feature(get_polarity, active=True)),
         # ('subjectivity', pipelinize_feature(get_subjectivity, active=True)),
     ])),
-    ('clf', LogisticRegression()),
+    ('clf', svm.LinearSVC()),
 ])
 
 grid_params = {
