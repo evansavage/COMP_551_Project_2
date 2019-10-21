@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import nltk
+import gensim
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -77,6 +78,7 @@ def clean_dataset(dataset: pd.DataFrame):
         #     final_string += word.lemmatize() + ' '
         # # print(final_string)
         # print(i, comment)
+        print(f'{ i } done')
         updated_comments.append(' '.join(lemmatized_list))
 
     print('Done cleaning')
