@@ -19,7 +19,7 @@ from dataset import load_dataset, dataset_analysis_extension, clean_dataset, \
     add_pol_sub, pipelinize_feature, named_entity_recognition, get_polarity, \
     get_subjectivity, ner_input, get_comment_length
 
-print('Use existing clean dataset? [y/n]')
+print('Clean dataset: [c]\nUse existing clean dataset: [e]\nUse unchanged dataset: [u]')
 clean = input()
 print('Is this run for tuning or for predicting? [t/p]')
 tuning = input()
@@ -28,7 +28,6 @@ tuning = input()
 count_vect = CountVectorizer(stop_words="english")
 tfidf_transformer = TfidfTransformer(use_idf=True, norm='l2')
 tfidf_vec = TfidfVectorizer()
-scaler = StandardScaler()
 
 original_dataset = load_dataset('reddit_train.csv', ',')
 test_dataset = load_dataset('reddit_test.csv', ',')
@@ -40,8 +39,8 @@ y = original_dataset['subreddits']
 
 X_new = new_orig_dataset.comments.values
 y_new = new_orig_dataset.subreddits.values
-print(new_orig_dataset.subreddits.unique())
-if clean == 'n':
+
+if clean == 'c':
     X_orig = clean_dataset(X)
     X_test_pipe = clean_dataset(test_dataset)
     # perform named entity recognition
@@ -61,15 +60,15 @@ if clean == 'n':
     ner.to_csv('ner_clean_train.csv')
     ner_test.to_csv('ner_clean_test.csv')
 
-elif clean == 'y':
+elif clean == 'e':
     with open('clean_train.csv') as f:
         X_orig = [line.strip() for line in f][1:]
     with open('clean_test.csv') as f:
         X_test_pipe = [line.strip() for line in f][1:]
     ner = load_dataset('ner_clean_train.csv', ',').to_numpy()[:,1:]
     ner_test = load_dataset('ner_clean_test.csv', ',').to_numpy()[:,1:]
-elif clean == 'w':
-    # Use extended dataset with new comments
+elif clean == 'u':
+    # Use unclean dataset dataset with new comments
     X_orig = X.comments.values
     # y = y_new
     X_test_pipe = test_dataset.values
